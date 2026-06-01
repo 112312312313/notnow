@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALBORD Launcher — Minecraft launcher</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f12;
+    --bg2: #14171c;
+    --card: #1a1f26;
+    --accent: #00ff9d;
+    --accent2: #00c8ff;
+    --text: #e8eef2;
+    --muted: #8590a0;
+    --border: rgba(255,255,255,0.08);
+    --good: #00ff9d;
+    --bad: #ff5577;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ===== HERO ===== */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px 100px;
+    text-align: center;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('logo.png');
+    background-size: min(780px, 95vw);
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.16;
+    filter: blur(1px);
+    z-index: 0;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at center, rgba(0,255,157,0.08) 0%, transparent 34%, var(--bg) 78%),
+      linear-gradient(180deg, rgba(0,0,0,0.2), var(--bg));
+    z-index: 1;
+  }
+  .hero > * { position: relative; z-index: 2; }
+
+  .hero-icon {
+    width: 96px;
+    height: 96px;
+    border-radius: 22px;
+    margin-bottom: 20px;
+    object-fit: cover;
+    box-shadow: 0 10px 40px rgba(0, 255, 157, 0.3);
+  }
+  .hero h1 {
+    font-size: clamp(48px, 8vw, 96px);
+    font-weight: 900;
+    letter-spacing: 8px;
+    background: linear-gradient(135deg, #00ff9d 0%, #00c8ff 50%, #00ff9d 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .hero .sub {
+    font-size: 18px;
+    color: var(--muted);
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+  .hero .desc {
+    max-width: 660px;
+    color: var(--text);
+    margin: 24px auto 32px;
+    font-size: 16px;
+  }
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+  .badge {
+    background: rgba(0, 255, 157, 0.1);
+    border: 1px solid rgba(0, 255, 157, 0.3);
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge.warn { background: rgba(255, 200, 0, 0.1); border-color: rgba(255, 200, 0, 0.3); color: #ffc800; }
+  .badge.ai { background: rgba(0, 200, 255, 0.1); border-color: rgba(0, 200, 255, 0.45); color: var(--accent2); }
+
+  .scroll-hint {
+    margin-top: 40px;
+    color: var(--muted);
+    font-size: 13px;
+    animation: bounce 2s infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* ===== CONTAINER ===== */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  section { padding: 80px 0; }
+  h2 {
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  h2 .accent { color: var(--accent); }
+  .section-sub {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 50px;
+    font-size: 15px;
+  }
+
+  /* ===== COMPARISON ===== */
+  .compare {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 24px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-4px); }
+  .card.albord { border-color: rgba(0, 255, 157, 0.3); }
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 24px;
+    font-weight: 800;
+  }
+  .card-title img {
+    width: 36px; height: 36px; border-radius: 8px; object-fit: cover;
+  }
+  .card-title .albord-logo {
+    background: linear-gradient(135deg, #00ff9d, #00c8ff);
+    width: 36px; height: 36px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #000; font-weight: 900; font-size: 14px;
+  }
+  .card-title .tl-logo {
+    background: #2a4d7f;
+    width: 36px; height: 36px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 900; font-size: 14px;
+  }
+  .card-sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  .pros, .cons { margin-bottom: 16px; }
+  .list-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .pros .list-title { color: var(--good); }
+  .cons .list-title { color: var(--bad); }
+  .card ul {
+    list-style: none;
+    padding: 0;
+  }
+  .card li {
+    padding: 6px 0 6px 24px;
+    position: relative;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .pros li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--good);
+    font-weight: 900;
+  }
+  .cons li::before {
+    content: '✕';
+    position: absolute;
+    left: 0;
+    color: var(--bad);
+    font-weight: 900;
+  }
+
+  .verdict {
+    margin-top: 50px;
+    padding: 24px;
+    background: var(--bg2);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    font-size: 15px;
+    color: var(--text);
+  }
+  .verdict b { color: var(--accent); }
+
+  .ai-panel {
+    margin-top: 28px;
+    padding: 24px;
+    background:
+      linear-gradient(135deg, rgba(0,255,157,0.10), rgba(0,200,255,0.08)),
+      var(--card);
+    border: 1px solid rgba(0, 200, 255, 0.28);
+    border-radius: 16px;
+    box-shadow: 0 0 34px rgba(0, 255, 157, 0.08);
+  }
+  .ai-panel h3 {
+    color: var(--accent2);
+    font-size: 24px;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+  .ai-panel p { color: var(--text); font-size: 15px; }
+  .ai-panel b { color: var(--accent); }
+
+  /* ===== README ===== */
+  #readme-section {
+    background: var(--bg2);
+  }
+  .readme-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .readme-content {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 32px 36px;
+    line-height: 1.8;
+    scroll-behavior: smooth;
+  }
+  .readme-content::-webkit-scrollbar { width: 10px; }
+  .readme-content::-webkit-scrollbar-track { background: transparent; }
+  .readme-content::-webkit-scrollbar-thumb {
+    background: rgba(0,255,157,0.4);
+    border-radius: 5px;
+  }
+  .readme-content h3 {
+    color: var(--accent);
+    margin: 24px 0 12px;
+    font-size: 20px;
+  }
+  .readme-content h3:first-child { margin-top: 0; }
+  .readme-content p, .readme-content ul { margin-bottom: 12px; color: var(--text); }
+  .readme-content ul { padding-left: 24px; }
+  .readme-content li { margin: 4px 0; }
+  .readme-content code {
+    background: rgba(0,0,0,0.4);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #b6f5d8;
+    font-family: 'Consolas', 'Monaco', monospace;
+  }
+  .readme-content pre {
+    background: #000;
+    padding: 14px 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .readme-content pre code {
+    background: transparent;
+    padding: 0;
+  }
+  .readme-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  .readme-content th, .readme-content td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  .readme-content th {
+    background: rgba(0,255,157,0.1);
+    color: var(--accent);
+  }
+  .disclaimer-block {
+    background: rgba(255, 85, 119, 0.08);
+    border: 1px solid rgba(255, 85, 119, 0.3);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 20px 0;
+    color: #ffc8d0;
+    font-size: 14px;
+  }
+  .disclaimer-block strong { color: var(--bad); }
+  .ai-block {
+    background: rgba(0, 200, 255, 0.08);
+    border: 1px solid rgba(0, 200, 255, 0.32);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 20px 0;
+    color: #c8f4ff;
+    font-size: 14px;
+  }
+  .ai-block strong { color: var(--accent2); }
+
+  .readme-footer {
+    padding: 16px 24px;
+    background: rgba(0,0,0,0.3);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .progress-mini {
+    flex: 1;
+    min-width: 120px;
+    max-width: 240px;
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-mini-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.15s linear;
+  }
+  .scroll-status {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .scroll-status.done { color: var(--accent); font-weight: 600; }
+
+  /* ===== CONSENT + DOWNLOAD ===== */
+  .consent-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .consent-row:hover { border-color: rgba(0, 255, 157, 0.4); }
+  .consent-row.disabled { opacity: 0.5; cursor: not-allowed; }
+  .consent-row input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    accent-color: var(--accent);
+    margin-top: 2px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .consent-row label {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .download-area {
+    text-align: center;
+  }
+  
+  /* Button group styles */
+  .button-group {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 48px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    color: #000;
+    border: none;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+    text-decoration: none;
+  }
+  .btn-download:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 255, 157, 0.35);
+    text-decoration: none;
+  }
+  .btn-download:disabled {
+    background: var(--card);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-download .icon { font-size: 22px; }
+  
+  .btn-github {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s;
+    text-decoration: none;
+    position: relative;
+  }
+  .btn-github:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 20px rgba(0, 255, 157, 0.2);
+  }
+  .btn-github svg {
+    width: 32px;
+    height: 32px;
+    fill: var(--text);
+    transition: fill 0.2s;
+  }
+  .btn-github:hover svg {
+    fill: var(--accent);
+  }
+  .btn-github .tooltip {
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg2);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    border: 1px solid var(--border);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .btn-github:hover .tooltip {
+    opacity: 1;
+  }
+  
+  .download-info {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .download-locked-msg {
+    margin-top: 10px;
+    color: var(--bad);
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 18px;
+  }
+  .download-locked-msg.ok { color: var(--accent); }
+
+  /* ===== FOOTER ===== */
+  footer {
+    background: #050608;
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--muted); }
+  footer a:hover { color: var(--accent); }
+
+  @media (max-width: 600px) {
+    .hero h1 { letter-spacing: 4px; }
+    .compare { grid-template-columns: 1fr; }
+    .readme-content { padding: 20px 22px; }
+    section { padding: 50px 0; }
+    h2 { font-size: 28px; }
+    .btn-download { width: 100%; justify-content: center; padding: 16px 20px; }
+    .btn-github { width: 50px; height: 50px; }
+    .btn-github svg { width: 28px; height: 28px; }
+    .button-group { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== HERO ============== -->
+<section class="hero">
+  <img src="icon.png" alt="ALBORD" class="hero-icon">
+  <h1>ALBORD</h1>
+  <div class="sub">MINECRAFT LAUNCHER</div>
+  <p class="desc">
+    Простой и быстрый лаунчер Minecraft. Скачивает игру напрямую с серверов Mojang.
+    Без рекламы, без трекеров, без обязательной регистрации.
+    <br><b>Сам лаунчер ALBORD сделан ИИ на 100%.</b>
+  </p>
+  <div class="badges">
+    <span class="badge">Electron 28</span>
+    <span class="badge">Open Source · MIT</span>
+    <span class="badge">Windows</span>
+    <span class="badge ai">100% AI-made launcher</span>
+    <span class="badge warn">Pet-project · v1.0</span>
+  </div>
+  <a href="#compare" class="scroll-hint">▼ Прокрутите вниз чтобы узнать подробнее</a>
+</section>
+
+<!-- ============== COMPARISON ============== -->
+<section id="compare">
+  <div class="container">
+    <h2>Сравнение с <span class="accent">TLauncher</span></h2>
+    <p class="section-sub">Честно, без маркетинга. Что выбрать — решайте сами.</p>
+
+    <div class="compare">
+      <!-- ALBORD -->
+      <div class="card albord">
+        <div class="card-title">
+          <img src="logo.png" alt="ALBORD">
+          ALBORD Launcher
+        </div>
+        <div class="card-sub">Open-source, pet-project · сделан ИИ на 100%</div>
+
+        <div class="pros">
+          <div class="list-title">Плюсы</div>
+          <ul>
+            <li>Полностью open-source (MIT) — код можно смотреть и менять</li>
+            <li>Сам лаунчер ALBORD сделан ИИ на 100%</li>
+            <li>Нет рекламы и трекеров</li>
+            <li>Не делает ничего "за кулисами" — только скачивает MC с серверов Mojang</li>
+            <li>Очень лёгкий: ~70 MB установка</li>
+            <li>Простой и понятный UI без лишнего</li>
+            <li>Свои JVM-аргументы, своя папка <code>.minecraft</code>, свой Java</li>
+            <li>Snapshot / old beta / old alpha версии</li>
+            <li>Работает на Windows</li>
+          </ul>
+        </div>
+
+        <div class="cons">
+          <div class="list-title">Минусы</div>
+          <ul>
+            <li>Только vanilla Minecraft (нет Forge/Fabric/Quilt)</li>
+            <li>Нет менеджера модов</li>
+            <li>Только offline-режим (без официальной авторизации Microsoft)</li>
+            <li>Нет автообновления лаунчера</li>
+            <li>Нет управления скинами/плащами</li>
+            <li>Маленькое сообщество — мало готовых решений на форумах</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- TLauncher -->
+      <div class="card">
+        <div class="card-title">
+          <span class="tl-logo">TL</span>
+          TLauncher
+        </div>
+        <div class="card-sub">Самый популярный "пиратский" лаунчер</div>
+
+        <div class="pros">
+          <div class="list-title">Плюсы</div>
+          <ul>
+            <li>Огромное сообщество и много инструкций на YouTube</li>
+            <li>Встроенная поддержка Forge, Fabric, OptiFine</li>
+            <li>Менеджер модов и модпаков</li>
+            <li>Управление скинами (TLauncher Skins)</li>
+            <li>Автообновление</li>
+            <li>Готовые пресеты под популярные серверы</li>
+          </ul>
+        </div>
+
+        <div class="cons">
+          <div class="list-title">Минусы</div>
+          <ul>
+            <li>Закрытый исходный код — нельзя проверить, что он делает</li>
+            <li>Реклама в интерфейсе</li>
+            <li>Известные случаи добавления adware/PUP в установщик (см. репорты антивирусов разных лет)</li>
+            <li>Сбор телеметрии без явного разрешения</li>
+            <li>Тяжёлый: ~150-200 MB</li>
+            <li>Регулярно блокируется антивирусами (Defender, Avast и т.д.)</li>
+            <li>Был замешан в скандалах с продажей DDoS-атак через свои серверы (2022)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <b>Кому что подойдёт:</b>
+      Если нужны <b>моды, Forge/Fabric и большое community</b> — TLauncher проще на старте, но платите за это рекламой
+      и непрозрачностью. Если нужен <b>чистый, понятный, безопасный лаунчер только для vanilla</b> и вы не против
+      настроить Java вручную — ALBORD сделает это без рекламы и слежки.
+    </div>
+
+    <div class="ai-panel">
+      <h3>🤖 100% сделано ИИ</h3>
+      <p>
+        Важно: <b>сам лаунчер ALBORD создан ИИ на 100%</b>. Это часть идеи проекта — простой,
+        прозрачный и open-source лаунчер, который можно проверить, изменить и собрать самостоятельно.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============== README ============== -->
+<section id="readme-section">
+  <div class="container">
+    <h2>📋 Прочитайте перед скачиванием</h2>
+    <p class="section-sub">
+      Дочитайте до конца — иначе кнопка скачивания не активируется.
+      Это не маркетинг, тут важная информация.
+    </p>
+
+    <div class="readme-box">
+      <div class="readme-content" id="readme-scroll">
+
+        <h3>1. Что это такое</h3>
+        <p>
+          ALBORD Launcher — это <b>сторонний лаунчер Minecraft</b> с открытым исходным кодом.
+          Он не разработан и не одобрен компанией Mojang Studios или Microsoft.
+        </p>
+        <p>
+          Лаунчер скачивает игровые файлы напрямую с официальных серверов Mojang
+          (<code>launchermeta.mojang.com</code>, <code>resources.download.minecraft.net</code>) —
+          то есть с тех же URL, что и официальный лаунчер.
+        </p>
+
+        <div class="ai-block">
+          <strong>ИИ-проект:</strong> сам лаунчер <b>ALBORD сделан ИИ на 100%</b>. Перед использованием
+          рекомендуется ознакомиться с исходным кодом и понимать ограничения pet-project версии.
+        </div>
+
+        <h3>2. Что нужно установить отдельно</h3>
+        <ul>
+          <li><b>Java</b> — без неё Minecraft не запустится. Версия зависит от версии MC:</li>
+        </ul>
+        <table>
+          <thead>
+            <tr><th>Версия Minecraft</th><th>Нужна Java</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1.16 и старше</td><td>Java 8</td></tr>
+            <tr><td>1.17</td><td>Java 16</td></tr>
+            <tr><td>1.18 – 1.20.4</td><td>Java 17</td></tr>
+            <tr><td>1.20.5 и новее</td><td>Java 21</td></tr>
+          </tbody>
+        </table>
+        <p>
+          Скачать Java можно бесплатно с
+          <a href="https://adoptium.net/" target="_blank" rel="noopener">adoptium.net</a>.
+          После установки укажите путь к <code>java.exe</code> в настройках лаунчера.
+        </p>
+
+        <h3>3. Что лаунчер умеет</h3>
+        <ul>
+          <li>Запускать любые релизы Minecraft (vanilla)</li>
+          <li>Snapshot, old_alpha и old_beta версии</li>
+          <li>Скачивать client.jar, libraries, assets, natives</li>
+          <li>Настраивать RAM (по умолчанию 2 GB)</li>
+          <li>Свои JVM/Game аргументы (для опытных)</li>
+          <li>Менять путь к Java и папке <code>.minecraft</code></li>
+          <li>Сворачивать окно при запуске MC (экономия CPU/RAM)</li>
+        </ul>
+
+        <h3>4. Что лаунчер НЕ умеет</h3>
+        <ul>
+          <li>❌ Forge / Fabric / Quilt — только vanilla</li>
+          <li>❌ Менеджер модов и модпаков</li>
+          <li>❌ Официальную авторизацию Microsoft / Mojang (только offline mode)</li>
+          <li>❌ Управление скинами и плащами</li>
+          <li>❌ Авто-обновление самого лаунчера</li>
+        </ul>
+
+        <h3>5. Где будут храниться файлы</h3>
+        <p>
+          По умолчанию лаунчер использует отдельную папку Minecraft. Вы можете изменить путь в настройках,
+          чтобы не смешивать файлы с другими лаунчерами.
+        </p>
+        <pre><code>Windows: %APPDATA%\.minecraft
+macOS: ~/Library/Application Support/minecraft
+Linux: ~/.minecraft</code></pre>
+
+        <h3>6. Про безопасность и проверку</h3>
+        <p>
+          Проект open-source: если вы не доверяете готовому файлу, скачайте исходники, проверьте код
+          и соберите лаунчер самостоятельно. Это особенно важно, потому что ALBORD — pet-project.
+        </p>
+        <ul>
+          <li>Скачивайте лаунчер только с официальной страницы проекта.</li>
+          <li>Не вводите пароль от Microsoft/Mojang — лаунчер работает в offline mode.</li>
+          <li>Проверяйте файл антивирусом перед запуском.</li>
+        </ul>
+
+        <h3>7. Важно: лаунчер сделан ИИ</h3>
+        <p>
+          <b>ALBORD Launcher сделан ИИ на 100%.</b> Поэтому проект честно указывает ограничения:
+          возможны баги, недоработки интерфейса и особенности работы на разных системах.
+          Если что-то работает неправильно — сообщите автору или исправьте код самостоятельно.
+        </p>
+
+        <div class="disclaimer-block">
+          <strong>Дисклеймер:</strong> Minecraft принадлежит Mojang Studios / Microsoft.
+          ALBORD Launcher не является официальным продуктом Mojang или Microsoft и распространяется как независимый проект.
+        </div>
+
+        <h3>8. Коротко перед скачиванием</h3>
+        <ul>
+          <li>Это vanilla-лаунчер без модов и официальной авторизации.</li>
+          <li>Для запуска нужна Java подходящей версии.</li>
+          <li>Сам лаунчер ALBORD сделан ИИ на 100%.</li>
+          <li>Вы используете проект на свой страх и риск.</li>
+        </ul>
+      </div>
+
+      <div class="readme-footer">
+        <span>Прогресс чтения</span>
+        <div class="progress-mini"><div class="progress-mini-fill" id="progress-fill"></div></div>
+        <span class="scroll-status" id="scroll-status">Дочитайте до конца</span>
+      </div>
+    </div>
+
+    <div class="consent-row disabled" id="consent-row">
+      <input type="checkbox" id="consent" disabled>
+      <label for="consent">
+        Я прочитал(а) информацию выше, понимаю ограничения ALBORD Launcher, знаю что сам лаунчер сделан ИИ на 100%,
+        и принимаю ответственность за использование.
+      </label>
+    </div>
+
+    <div class="download-area">
+      <div class="button-group">
+        <button class="btn-download" id="download-btn" disabled>
+          <span class="icon">⬇</span>
+          Скачать ALBORD
+        </button>
+        <a href="https://github.com/112312312313/what" target="_blank" class="btn-github" id="github-btn">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12,2A10,10 0 0,0 2,12c0,4.42 2.87,8.17 6.84,9.5c0.5,0.08 0.66,-0.23 0.66,-0.5c0,-0.23 0,-0.84 0,-1.64c-2.78,0.6 -3.37,-1.34 -3.37,-1.34c-0.46,-1.16 -1.11,-1.47 -1.11,-1.47c-0.91,-0.62 0.07,-0.6 0.07,-0.6c1,0.07 1.53,1.03 1.53,1.03c0.89,1.52 2.34,1.08 2.91,0.83c0.09,-0.65 0.35,-1.09 0.63,-1.34c-2.22,-0.25 -4.56,-1.11 -4.56,-4.94c0,-1.09 0.39,-1.98 1.03,-2.68c-0.1,-0.25 -0.45,-1.27 0.1,-2.64c0,0 0.84,-0.27 2.75,1.02c0.8,-0.22 1.65,-0.33 2.5,-0.33c0.85,0 1.7,0.11 2.5,0.33c1.91,-1.29 2.75,-1.02 2.75,-1.02c0.55,1.37 0.2,2.39 0.1,2.64c0.64,0.7 1.03,1.59 1.03,2.68c0,3.84 -2.34,4.69 -4.57,4.94c0.36,0.31 0.68,0.92 0.68,1.85c0,1.34 0,2.42 0,2.75c0,0.27 0.16,0.58 0.66,0.5A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+          </svg>
+          <span class="tooltip">Открыть исходный код на GitHub</span>
+        </a>
+      </div>
+      <div class="download-info">Кнопка активируется после прочтения и подтверждения.</div>
+      <div class="download-locked-msg" id="download-msg">Сначала дочитайте README до конца.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p><b>ALBORD Launcher</b> · Open Source · MIT · Сам лаунчер сделан ИИ на 100%</p>
+  <p>Minecraft © Mojang Studios / Microsoft. Этот сайт и лаунчер не являются официальными продуктами Mojang или Microsoft.</p>
+</footer>
+
+<script>
+  const readme = document.getElementById('readme-scroll');
+  const progressFill = document.getElementById('progress-fill');
+  const statusText = document.getElementById('scroll-status');
+  const consent = document.getElementById('consent');
+  const consentRow = document.getElementById('consent-row');
+  const downloadBtn = document.getElementById('download-btn');
+  const downloadMsg = document.getElementById('download-msg');
+  const githubBtn = document.getElementById('github-btn');
+
+  let readComplete = false;
+
+  function updateDownloadState() {
+    if (!readComplete) {
+      downloadBtn.disabled = true;
+      downloadMsg.classList.remove('ok');
+      downloadMsg.textContent = 'Сначала дочитайте README до конца.';
+      return;
+    }
+
+    if (!consent.checked) {
+      downloadBtn.disabled = true;
+      downloadMsg.classList.remove('ok');
+      downloadMsg.textContent = 'Поставьте галочку подтверждения.';
+      return;
+    }
+
+    downloadBtn.disabled = false;
+    downloadMsg.classList.add('ok');
+    downloadMsg.textContent = 'Готово. Можно скачивать.';
+  }
+
+  function handleScroll() {
+    const maxScroll = readme.scrollHeight - readme.clientHeight;
+    const current = readme.scrollTop;
+    const percent = maxScroll <= 0 ? 100 : Math.min(100, Math.round((current / maxScroll) * 100));
+    progressFill.style.width = percent + '%';
+
+    if (percent >= 98) {
+      readComplete = true;
+      consent.disabled = false;
+      consentRow.classList.remove('disabled');
+      statusText.textContent = 'Прочитано ✓';
+      statusText.classList.add('done');
+    }
+
+    updateDownloadState();
+  }
+
+  readme.addEventListener('scroll', handleScroll);
+  consent.addEventListener('change', updateDownloadState);
+  consentRow.addEventListener('click', (event) => {
+    if (!readComplete) return;
+    if (event.target !== consent) consent.checked = !consent.checked;
+    updateDownloadState();
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    if (downloadBtn.disabled) return;
+    window.location.assign("ALBORD Launcher Setup 1.0.0.exe");
+  });
+
+  handleScroll();
+</script>
+</body>
+</html>
